@@ -1,0 +1,29 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.db
+
+# Virtual environments
+venv/
+.env/
+
+# VSCode / IDE
+.vscode/
+.idea/
+
+# macOS/Linux system files
+.DS_Store
+
+# Node/JS related
+node_modules/
+
+# Logs or temp files
+*.log
+*.bak
+*.swp
+
+# Compiled frontend files
+dist/
+build/
