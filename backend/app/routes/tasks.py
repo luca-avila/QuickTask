@@ -114,3 +114,62 @@ def delete_task(task_id):
 
     # Return success message
     return jsonify({'message': 'Task deleted successfully'}), 200
+
+@tasks_bp.route('/tasks/<int:task_id>', methods=['PATCH'])
+def modify_task(task_id):
+    data = request.json
+
+    # Return error if no JSON received
+    if data is None:
+        return jsonify({'error': 'No JSON data received'}), 400
+
+    # Check if task exists
+    try:
+        with engine.begin() as conn:
+            select_statement = tasks.select().where(tasks.c.id == task_id)
+            result = conn.execute(select_statement).fetchone()
+    except Exception as e:
+        return jsonify({'error': f'Error checking task: {str(e)}'}), 500
+
+    # Return error if task not found
+    if not result:
+        return jsonify({'error': 'Task not found'}), 404
+
+    # Check fields to update
+    to_update = {}
+    if 'priority' in data:
+        try:
+            task_priority = int(data['priority'])
+            if task_priority < 0 or task_priority > 5:
+                return jsonify({'error': 'Priority must be between 0 and 5'}), 400
+        except (ValueError, TypeError):
+            return jsonify({'error': 'Priority should be a number'}), 400
+        to_update['priority'] = task_priority
+
+    if 'completed' in data:
+        if data['completed'] not in [True, False]:
+            return jsonify({'error': 'Completed should be a boolean'}), 400
+        to_update['completed'] = data['completed']
+    if 'title' in data:
+        if not data['title'] or len(data['title']) > 200:
+            return jsonify({'error': 'Title must be between 1 and 200 characters'}), 400
+        to_update['title'] = data['title']
+
+    if 'description' in data:
+        if data['description'] and len(data['description']) > 1000:
+            return jsonify({'error': 'Description must be less than 1000 characters'}), 400
+        to_update['description'] = data['description']
+
+    if not to_update:
+        return jsonify({'error': 'No fields to update'}), 400
+    
+    # Update task in database
+    try:
+        with engine.begin() as conn:
+            update_statement = tasks.update().where(tasks.c.id == task_id).values(**to_update)
+            result = conn.execute(update_statement)
+    except Exception as e:
+        return jsonify({'error': f'Error updating task: {str(e)}'}), 500
+    
+    # Return success message
+    return jsonify({'message': 'Task updated successfully'}), 200
