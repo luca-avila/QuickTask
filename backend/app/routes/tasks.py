@@ -43,15 +43,38 @@ def add_task():
         return jsonify({'error': 'Completed should be a boolean'}), 400
 
     # Add to the database
-    with engine.begin() as conn:
-        insert_statement = tasks.insert().values(
+    try:
+        with engine.begin() as conn:
+            insert_statement = tasks.insert().values(
             title = data['title'],
             priority = task_priority,
             completed = data['completed'],
             description = data.get('description', ''),
             date = date.today()
-        )
-        conn.execute(insert_statement)
+            )
+            conn.execute(insert_statement)
+    except Exception as e:
+        return jsonify({'error': f'Error adding task: {str(e)}'}), 500
     
     # Return success message
     return jsonify({'message': 'Task succesfully added'}), 201
+
+@tasks_bp.route('/tasks', methods=['GET'])
+def get_tasks():
+    # Get all tasks
+    try:
+        with engine.begin() as conn:
+            select_statement = tasks.select().order_by(desc(tasks.c.date), desc(tasks.c.id))
+            result = conn.execute(select_statement).fetchall()
+    except Exception as e:
+        return jsonify({'error': f'Error getting tasks: {str(e)}'}), 500
+
+    # Return empty list if no task was found
+    if not result:
+        return jsonify([]), 200
+
+    # Convert every task to dict format
+    tasks_list = [build_task_response(task) for task in result]
+
+    # Return transactions in JSON format
+    return jsonify(tasks_list), 200
