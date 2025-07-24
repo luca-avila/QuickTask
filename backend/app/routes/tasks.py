@@ -78,3 +78,22 @@ def get_tasks():
 
     # Return transactions in JSON format
     return jsonify(tasks_list), 200
+
+@tasks_bp.route('/tasks/<int:id>', methods=['GET'])
+def get_task(id):
+    # Get task
+    try:
+        with engine.begin() as conn:
+            select_statement = tasks.select().where(tasks.c.id == id)
+            result = conn.execute(select_statement).fetchone()
+    except Exception as e:
+        return jsonify({'error': f'Error getting task: {str(e)}'}), 500
+
+    # Return error if task not fount
+    if not result:
+        return jsonify({'error': 'Task not found'}), 404
+    
+    # Convert task to dictionary
+    task_dict = build_task_response(result)
+
+    return jsonify(task_dict), 200
