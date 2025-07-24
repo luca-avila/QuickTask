@@ -57,7 +57,7 @@ def add_task():
         return jsonify({'error': f'Error adding task: {str(e)}'}), 500
     
     # Return success message
-    return jsonify({'message': 'Task succesfully added'}), 201
+    return jsonify({'message': 'Task successfully added'}), 201
 
 @tasks_bp.route('/tasks', methods=['GET'])
 def get_tasks():
@@ -79,17 +79,17 @@ def get_tasks():
     # Return transactions in JSON format
     return jsonify(tasks_list), 200
 
-@tasks_bp.route('/tasks/<int:id>', methods=['GET'])
-def get_task(id):
+@tasks_bp.route('/tasks/<int:task_id>', methods=['GET'])
+def get_task(task_id):
     # Get task
     try:
         with engine.begin() as conn:
-            select_statement = tasks.select().where(tasks.c.id == id)
+            select_statement = tasks.select().where(tasks.c.id == task_id)
             result = conn.execute(select_statement).fetchone()
     except Exception as e:
         return jsonify({'error': f'Error getting task: {str(e)}'}), 500
 
-    # Return error if task not fount
+    # Return error if task not found
     if not result:
         return jsonify({'error': 'Task not found'}), 404
     
@@ -97,3 +97,20 @@ def get_task(id):
     task_dict = build_task_response(result)
 
     return jsonify(task_dict), 200
+    
+@tasks_bp.route('/tasks/<int:task_id>', methods=['DELETE'])
+def delete_task(task_id):
+    # Delete task
+    try:
+        with engine.begin() as conn:
+            delete_statement = tasks.delete().where(tasks.c.id == task_id)
+            result = conn.execute(delete_statement)
+    except Exception as e:
+        return jsonify({'error': f'Error deleting task: {str(e)}'}), 500
+
+    # If no tasks were deleted, return error
+    if result.rowcount == 0:
+        return jsonify({'error': 'Task not found'}), 404
+
+    # Return success message
+    return jsonify({'message': 'Task deleted successfully'}), 200
