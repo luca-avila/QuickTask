@@ -2,6 +2,7 @@ from datetime import date
 from sqlalchemy import desc
 from flask import Blueprint, request, jsonify
 from backend.app.models.tasks import tasks, engine
+from backend.app.validators.task_validator import validate_task, validate_task_update
 
 tasks_bp = Blueprint('tasks', __name__)
 
@@ -24,30 +25,16 @@ def add_task():
     if data is None:
         return jsonify({'error': 'No JSON data received'}), 400
 
-    # Return error if not all required field are received
-    required_fields = ['title', 'completed', 'priority']
-    for field in required_fields:
-        if field not in data:
-            return jsonify({'error': f'Missing field: {field}'}), 400
-
-    # Return error if priority is not a number 0-5
-    try:
-        task_priority = int(data['priority'])
-        if task_priority < 0 or task_priority > 5:
-            return jsonify({'error': 'Priority must be between 0 and 5'}), 400
-    except (ValueError, TypeError):
-        return jsonify({'error': 'Priority should be a number'}), 400
-
-    # Return error if completed is not a boolean
-    if data['completed'] not in [True, False]:
-        return jsonify({'error': 'Completed should be a boolean'}), 400
+    # Return error if task is not valid
+    if not validate_task(data):
+        return jsonify({'error': 'Invalid task'}), 400
 
     # Add to the database
     try:
         with engine.begin() as conn:
             insert_statement = tasks.insert().values(
             title = data['title'],
-            priority = task_priority,
+            priority = data['priority'],
             completed = data['completed'],
             description = data.get('description', ''),
             date = date.today()
@@ -135,31 +122,12 @@ def modify_task(task_id):
     if not result:
         return jsonify({'error': 'Task not found'}), 404
 
-    # Check fields to update
-    to_update = {}
-    if 'priority' in data:
-        try:
-            task_priority = int(data['priority'])
-            if task_priority < 0 or task_priority > 5:
-                return jsonify({'error': 'Priority must be between 0 and 5'}), 400
-        except (ValueError, TypeError):
-            return jsonify({'error': 'Priority should be a number'}), 400
-        to_update['priority'] = task_priority
-
-    if 'completed' in data:
-        if data['completed'] not in [True, False]:
-            return jsonify({'error': 'Completed should be a boolean'}), 400
-        to_update['completed'] = data['completed']
-    if 'title' in data:
-        if not data['title'] or len(data['title']) > 200:
-            return jsonify({'error': 'Title must be between 1 and 200 characters'}), 400
-        to_update['title'] = data['title']
-
-    if 'description' in data:
-        if data['description'] and len(data['description']) > 1000:
-            return jsonify({'error': 'Description must be less than 1000 characters'}), 400
-        to_update['description'] = data['description']
-
+    # Validate update data
+    errors, to_update = validate_task_update(data)
+    
+    if errors:
+        return jsonify({'error': 'Validation failed', 'details': errors}), 400
+    
     if not to_update:
         return jsonify({'error': 'No fields to update'}), 400
     
