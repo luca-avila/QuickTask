@@ -22,7 +22,7 @@ def add_task():
     return jsonify(task), 201
 
 @tasks_bp.route('/tasks', methods=['GET'])
-def get_tasks():
+def get_all_tasks():
     tasks = get_tasks()
 
     if not tasks:
@@ -31,7 +31,7 @@ def get_tasks():
     return jsonify(tasks), 200
 
 @tasks_bp.route('/tasks/<int:task_id>', methods=['GET'])
-def get_task(task_id):
+def get_single_task(task_id):
     task = get_task(task_id)
 
     if not task:
@@ -40,7 +40,7 @@ def get_task(task_id):
     return jsonify(task), 200
     
 @tasks_bp.route('/tasks/<int:task_id>', methods=['DELETE'])
-def delete_task(task_id):
+def delete_single_task(task_id):
     deleted_task = delete_task(task_id)
 
     if not deleted_task:

@@ -42,14 +42,23 @@ def update_task(task_id, task):
         if not result:
             return None
         update_statement = tasks.update().where(tasks.c.id == task_id).values(**task)
-        result = conn.execute(update_statement)
-        return build_task_response(result) if result else None
+        conn.execute(update_statement)
+        
+        select_statement = tasks.select().where(tasks.c.id == task_id)
+        updated_task = conn.execute(select_statement).fetchone()
+        return build_task_response(updated_task) if updated_task else None
 
 def delete_task(task_id):
     with engine.begin() as conn:
+        # First get the task to return it
+        select_statement = tasks.select().where(tasks.c.id == task_id)
+        task_to_delete = conn.execute(select_statement).fetchone()
+        if not task_to_delete:
+            return None
+            
         delete_statement = tasks.delete().where(tasks.c.id == task_id)
-        result = conn.execute(delete_statement)
-        return build_task_response(result) if result else None
+        conn.execute(delete_statement)
+        return build_task_response(task_to_delete)
 
 def build_task_response(task):
     return {
