@@ -1,15 +1,20 @@
 def validate_task(task):
-    if not task['title'] or len(task['title']) > 200:
+    try:
+        if not task['title'] or len(task['title']) > 200:
+            return False
+        if type(task['priority']) is not int:
+            return False
+        if type(task['completed']) is not bool:
+            return False
+        if task['priority'] < 0 or task['priority'] > 5:
+            return False
+        if task['description'] and len(task['description']) > 1000:
+            return False
+        if type(task['description']) is not str:
+            return False
+        return True
+    except (ValueError, TypeError, KeyError):
         return False
-    if type(task['priority']) is not int:
-        return False
-    if type(task['completed']) is not bool:
-        return False
-    if task['priority'] < 0 or task['priority'] > 5:
-        return False
-    if task['description'] and len(task['description']) > 1000:
-        return False
-    return True
 
 def validate_task_update(data):
     errors = []
