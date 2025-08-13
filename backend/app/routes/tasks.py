@@ -46,7 +46,7 @@ def delete_single_task(task_id):
     if not deleted_task:
         return jsonify({'error': 'Task not found'}), 404
 
-    return jsonify(deleted_task), 200
+    return jsonify(deleted_task), 204
 
 @tasks_bp.route('/tasks/<int:task_id>', methods=['PATCH'])
 def modify_task(task_id):
